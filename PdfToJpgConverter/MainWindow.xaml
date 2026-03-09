@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PdfToJpgConverter"
         mc:Ignorable="d"
-        Title="PDF to JPG Converter" Height="500" Width="700"
+        Title="PDF to JPG Converter" Height="530" Width="700"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanMinimize"
         AllowDrop="True"
@@ -15,6 +15,7 @@
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -97,5 +98,13 @@
 
         <!-- オプション -->
         <CheckBox x:Name="ChkOpenFolder" Grid.Row="7" Content="変換後にフォルダを開く" IsChecked="True" Margin="0,0,0,10"/>
+
+        <!-- クレジット -->
+        <Border Grid.Row="8" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="0,15,0,0">
+            <TextBlock Text="© 2025 Yuki Kondo | Created with ❤️"
+                       HorizontalAlignment="Center"
+                       FontSize="11"
+                       Foreground="#999999"/>
+        </Border>
     </Grid>
 </Window>
