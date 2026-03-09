@@ -1,87 +1,106 @@
-# PDF to JPG Converter
+# 📄 PDF to JPG Converter
 
-Windows用のPDF→JPG変換アプリケーションです。.NET 8で開発され、Macでビルド可能です。
+Windows用のPDF→JPG変換アプリケーションです。.NET 8で開発され、Macでビルド可能な自己完結型EXEとして配布します。
 
-## 機能
+![.NET](https://img.shields.io/badge/.NET-8-purple)
+![Platform](https://img.shields.io/badge/platform-Windows-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-- **単一ファイル変換**: 選択したPDFファイルをJPG画像に変換
-- **バッチ変換**: フォルダ内のすべてのPDFファイルを一括変換
-- **品質調整**: 画質を10%～100%で調整可能（デフォルト85%）
-- **ページごとの出力**: PDFの各ページを`[ファイル名]_page_001.jpg`形式で保存
-- **変換後にフォルダを開く**: オプションで自動的に出力先フォルダを開く
+## ✨ 機能
 
-## システム要件
+- **単一ファイル変換** - 選択したPDFファイルをJPG画像に変換
+- **ドラッグ&ドロップ** - PDFをウィンドウにドロップするだけで変換
+- **バッチ変換** - 複数のPDFファイルを一括変換
+  - フォルダを指定して一括変換
+  - 複数ファイルをドラッグ&ドロップで一括変換
+- **画質調整** - 10%～100%で画質を調整可能（デフォルト85%）
+- **自動フォルダオープン** - 変換後にエクスプローラーを自動で開く
 
-- **Windows 10/11**（64ビット）
-- Google Chrome（PuppeteerSharp使用のため、システムのChromeが必要）
+## 🎯 使い方
 
-## ビルド方法
+### 方法1: ドラッグ&ドロップ（推奨）
 
-### Macでビルドする場合
+1. アプリを起動
+2. PDFファイルをウィンドウに**ドラッグ&ドロップ**
+3. 自動で変換開始！
 
-```bash
-# プロジェクトディレクトリに移動
-cd PdfToJpgConverter/PdfToJpgConverter
+複数のPDFをドロップすると、一括変換されます。
 
-# パッケージの復元
-dotnet restore
+### 方法2: ボタン操作
 
-# 自己完結型EXEを作成（Windows用）
-dotnet publish -c Release -r win-x64 --self-contained true
-```
+1. **「PDF選択」**ボタンでファイル選択
+2. **「出力先」**ボタンで保存先フォルダ選択
+3. 画質スライダーで調整（オプション）
+4. **「単一ファイル変換」**ボタンをクリック
 
-ビルド完了後、`bin/Release/net8.0-windows/win-x64/publish/` フォルダに配布用ファイルが生成されます。
+### 方法3: フォルダ一括変換
 
-### Windowsでビルドする場合
-
-Visual Studio 2022または.NET SDK 8.0が必要です。
-
-```bash
-cd PdfToJpgConverter/PdfToJpgConverter
-dotnet publish -c Release -r win-x64 --self-contained true
-```
-
-## 使用方法
-
-### 単一ファイル変換
-
-1. 「PDF選択」ボタンをクリックしてPDFファイルを選択
-2. 「出力先」ボタンをクリックして保存先フォルダを選択（PDFと同じ場所がデフォルト）
-3. 画質スライダーで品質を調整（オプション）
-4. 「単一ファイル変換」ボタンをクリック
-
-### バッチ変換
-
-1. 「フォルダ内のPDFを一括変換」ボタンをクリック
+1. **「フォルダ内のPDFを一括変換」**ボタンをクリック
 2. 出力先フォルダを選択
-3. PDFファイルが含まれるフォルダを選択
+3. PDFが含まれるフォルダを選択
 4. 自動的にすべてのPDFが変換されます
 
-## 配布方法
+## 📥 ダウンロード
 
-### 配布用ファイル
+### 最新版リリース
 
-`bin/Release/net8.0-windows/win-x64/publish/` フォルダ内の全ファイル（約164MB）を配布します。
+[Releases](https://github.com/yuk1-kondo/PdfToJpgConverter/releases) からダウンロードしてください。
 
-- `PdfToJpgConverter.exe` - メインの実行ファイル
-- すべてのDLLファイル - .NETランタイムと依存ライブラリ
-- 言語フォルダ（cs、de、es、fr、it、ja、koなど）
+**含まれるファイル:**
+- `PdfToJpgConverter.exe` - 実行ファイル
+- 依存DLLファイル（約164MB）
+- すべてのファイルを1つのフォルダに配置して使用してください
 
-これらを1つのフォルダに配置するだけで、.NETランタイムがインストールされていないWindows PCでも動作します。
+### システム要件
 
-### Google Chromeの要件
+| 項目 | 要件 |
+|------|------|
+| OS | Windows 10/11 (64-bit) |
+| ブラウザ | Google Chrome または Microsoft Edge |
+| .NET | 不要（自己完結型） |
 
-**重要**: このアプリケーションはPuppeteerSharpを使用しており、システムにGoogle Chromeがインストールされている必要があります。
+## 🛠️ 開発環境
 
-企業PCでChromeがインストールされていない場合は、以下のいずれかが必要です：
-- Google Chromeのインストール
-- または、Chromiumベースのブラウザ（Microsoft Edgeなど）
+### ビルド方法
 
-## トラブルシューティング
+**Macでビルド:**
+```bash
+cd PdfToJpgConverter/PdfToJpgConverter
+dotnet restore
+dotnet publish -c Release -r win-x64 --self-contained true
+```
+
+**Windowsでビルド:**
+```bash
+cd PdfToJpgConverter/PdfToJpgConverter
+dotnet publish -c Release -r win-x64 --self-contained true
+```
+
+ビルド後、`bin/Release/net8.0-windows/win-x64/publish/` に配布用ファイルが生成されます。
+
+### 開発スタック
+
+- **.NET 8.0** - 最新の.NETプラットフォーム
+- **WPF** - Windows Presentation Foundation
+- **PuppeteerSharp** - PDFレンダリング（Chromeを使用）
+
+## 📸 UIプレビュー
+
+[UI-Preview.html](UI-Preview.html) をブラウザで開くと、UIのプレビューが見られます。
+
+## ⚠️ 制限事項
+
+| 項目 | 説明 |
+|------|------|
+| **複数ページPDF** | 現在は**1ページ目のみ**変換されます |
+| **Chrome必須** | Google ChromeまたはEdgeが必要です |
+| **Windows限定** | Windows 10/11 (64-bit) のみで動作 |
+
+## 🔧 トラブルシューティング
 
 ### アプリケーションが起動しない
-- Windows 10/11（64ビット）であることを確認してください
-- Google Chromeがインストールされていることを確認してください
+- Windows 10/11 (64-bit) であることを確認してください
+- Google ChromeまたはEdgeがインストールされていることを確認してください
 
 ### 変換中にエラーが発生する
 - PDFファイルが破損していないか確認してください
@@ -89,37 +108,36 @@ dotnet publish -c Release -r win-x64 --self-contained true
 - 十分なディスク容量があるか確認してください
 
 ### Chromeが見つからないエラー
-- Google Chromeをインストールしてください
-- または、環境変数`CHROME_EXECUTABLE_PATH`を設定してください
+- Google ChromeまたはEdgeをインストールしてください
+- 環境変数`CHROME_EXECUTABLE_PATH`を設定してください
 
-## 開発環境
+## 🗺️ ロードマップ
 
-- **.NET 8.0**
-- **WPF** (Windows Presentation Foundation)
-- **PuppeteerSharp** - PDFレンダリング用
+- [ ] 複数ページPDFの完全対応
+- [ ] ページ範囲選択機能
+- [ ] 変換速度の最適化
+- [ ] PNG形式での保存対応
+- [ ] 画像サイズ指定機能
 
-## ライセンス
+## 📝 ライセンス
 
-このアプリケーションは以下のライブラリを使用しています：
+MIT License - 詳しくは [LICENSE](LICENSE) ファイルを参照してください。
+
+### 使用ライブラリ
+
 - **PuppeteerSharp** - Apache License 2.0
+- **.NET 8** - MIT License
 
-## 注意事項
+## 🤝 コントリビューション
 
-- このアプリケーションはMacでビルドできますが、Windowsでのみ動作します
-- Google Chromeがインストールされている必要があります
-- 変換にはPDFのサイズとページ数に応じて時間がかかります
-- 大きなPDFファイルを変換する場合は、十分なメモリとディスク容量が必要です
-- PuppeteerSharpはPDFの最初のページをスクリーンショットとして保存します（マルチページ対応には追加開発が必要）
+バグ報告や機能リクエストは [Issues](https://github.com/yuk1-kondo/PdfToJpgConverter/issues) までお願いします。
 
-## 制限事項
+PRも常に受け付けています！
 
-- 現在の実装では、PDFの最初のページのみを変換します
-- マルチページPDFの完全な変換には追加の開発が必要です
-- 企業PCでChromeが制限されている場合、動作しない可能性があります
+## 👨‍💻 作者
 
-## 今後の改善予定
+作成: yuki-kondo
 
-- マルチページPDF対応
-- ページ範囲選択機能
-- 変換速度の最適化
-- Chrome不要のレンダリングエンジンへの移行
+---
+
+**もし役に立った場合は、⭐️をつけてください！**
