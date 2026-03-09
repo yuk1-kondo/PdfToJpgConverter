@@ -1,0 +1,101 @@
+<Window x:Class="PdfToJpgConverter.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PdfToJpgConverter"
+        mc:Ignorable="d"
+        Title="PDF to JPG Converter" Height="500" Width="700"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanMinimize"
+        AllowDrop="True"
+        Drop="Window_Drop"
+        DragEnter="Window_DragEnter"
+        DragLeave="Window_DragLeave">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- タイトル -->
+        <TextBlock Grid.Row="0" Text="PDF to JPG Converter" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+
+        <!-- PDFファイル選択 -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <TextBlock Text="PDFファイル:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="100"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="TxtPdfPath" Grid.Column="0" IsReadOnly="True"
+                         Text="PDFファイルを選択してください" Foreground="Gray" Padding="5"/>
+                <Button x:Name="BtnSelectPdf" Grid.Column="2" Content="選択" Click="BtnSelectPdf_Click"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- 出力先フォルダ選択 -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+            <TextBlock Text="出力先フォルダ:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="100"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="TxtOutputPath" Grid.Column="0" IsReadOnly="True"
+                         Text="出力先フォルダを選択してください" Foreground="Gray" Padding="5"/>
+                <Button x:Name="BtnSelectOutput" Grid.Column="2" Content="選択" Click="BtnSelectOutput_Click"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- 画質設定 -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,15">
+            <TextBlock Text="画質設定:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Slider x:Name="SliderQuality" Grid.Column="0" Minimum="10" Maximum="100" Value="85"
+                        TickFrequency="5" IsSnapToTickEnabled="True" ValueChanged="SliderQuality_ValueChanged"/>
+                <TextBlock x:Name="LblQuality" Grid.Column="1" Text="85%" FontWeight="Bold"
+                           MinWidth="50" TextAlignment="Right" Margin="10,0,0,0"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- 変換ボタン -->
+        <Grid Grid.Row="4" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="BtnConvert" Grid.Column="0" Content="単一ファイル変換" FontSize="14" Padding="10"
+                    Click="BtnConvert_Click" Height="45"/>
+            <Button x:Name="BtnConvertAll" Grid.Column="2" Content="フォルダ内のPDFを一括変換" FontSize="14" Padding="10"
+                    Click="BtnConvertAll_Click" Height="45"/>
+        </Grid>
+
+        <!-- 進捗バー -->
+        <StackPanel Grid.Row="5" Margin="0,0,0,10">
+            <ProgressBar x:Name="ProgressBar" Height="25" Minimum="0" Maximum="100" Value="0"/>
+        </StackPanel>
+
+        <!-- ステータス -->
+        <TextBlock x:Name="LblStatus" Grid.Row="6" Text="待機中..." Margin="0,0,0,10"/>
+
+        <!-- オプション -->
+        <CheckBox x:Name="ChkOpenFolder" Grid.Row="7" Content="変換後にフォルダを開く" IsChecked="True" Margin="0,0,0,10"/>
+    </Grid>
+</Window>
