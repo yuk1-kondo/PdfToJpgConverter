@@ -45,3 +45,8 @@ Desktop.ini
 # Rider
 .idea/
 *.sln.iml
+
+# Local workspace / temp artifacts
+.vscode/
+*.bak
+write_xaml.py
