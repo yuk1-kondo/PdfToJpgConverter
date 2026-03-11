@@ -1,202 +1,204 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
+using Docnet.Core;
+using Docnet.Core.Models;
 using Microsoft.Win32;
-using PuppeteerSharp;
+using WinForms = System.Windows.Forms;
+using WpfBrushes = System.Windows.Media.Brushes;
+using WpfColor = System.Windows.Media.Color;
+using WpfMessageBox = System.Windows.MessageBox;
 
 namespace PdfToJpgConverter;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow : Window
 {
     private int _quality = 85;
-    private const string PdfPlaceholder = "PDFファイルを選択してください";
-    private const string OutputPlaceholder = "出力先フォルダを選択してください";
+    private int _dpi = 150;
+
+    private const string PdfPlaceholder = "Select or drop a PDF file";
+    private const string OutputPlaceholder = "Select an output folder";
 
     public MainWindow()
     {
         InitializeComponent();
-        SetupPlaceholders();
     }
 
-    private void SetupPlaceholders()
+    private void DropZone_DragEnter(object sender, System.Windows.DragEventArgs e)
     {
-        TxtPdfPath.Text = PdfPlaceholder;
-        TxtPdfPath.Foreground = System.Windows.Media.Brushes.Gray;
-        TxtPdfPath.GotFocus += (s, e) =>
+        if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
         {
-            if (TxtPdfPath.Text == PdfPlaceholder)
-            {
-                TxtPdfPath.Text = "";
-                TxtPdfPath.Foreground = System.Windows.Media.Brushes.Black;
-            }
-        };
-        TxtPdfPath.LostFocus += (s, e) =>
-        {
-            if (string.IsNullOrEmpty(TxtPdfPath.Text))
-            {
-                TxtPdfPath.Text = PdfPlaceholder;
-                TxtPdfPath.Foreground = System.Windows.Media.Brushes.Gray;
-            }
-        };
-
-        TxtOutputPath.Text = OutputPlaceholder;
-        TxtOutputPath.Foreground = System.Windows.Media.Brushes.Gray;
-        TxtOutputPath.GotFocus += (s, e) =>
-        {
-            if (TxtOutputPath.Text == OutputPlaceholder)
-            {
-                TxtOutputPath.Text = "";
-                TxtOutputPath.Foreground = System.Windows.Media.Brushes.Black;
-            }
-        };
-        TxtOutputPath.LostFocus += (s, e) =>
-        {
-            if (string.IsNullOrEmpty(TxtOutputPath.Text))
-            {
-                TxtOutputPath.Text = OutputPlaceholder;
-                TxtOutputPath.Foreground = System.Windows.Media.Brushes.Gray;
-            }
-        };
-    }
-
-    // ドラッグ＆ドロップイベント
-    private void Window_DragEnter(object sender, DragEventArgs e)
-    {
-        if (e.Data.GetDataPresent(DataFormats.FileDrop))
-        {
-            e.Effects = DragDropEffects.Copy;
-            this.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 240, 255));
+            e.Effects = System.Windows.DragDropEffects.Copy;
+            DropZone.BorderBrush = new SolidColorBrush(WpfColor.FromRgb(25, 118, 210));
+            DropZone.Background = new SolidColorBrush(WpfColor.FromRgb(227, 242, 253));
         }
         else
         {
-            e.Effects = DragDropEffects.None;
+            e.Effects = System.Windows.DragDropEffects.None;
         }
+
+        e.Handled = true;
     }
 
-    private void Window_DragLeave(object sender, DragEventArgs e)
+    private void DropZone_DragLeave(object sender, System.Windows.DragEventArgs e)
     {
-        this.Background = System.Windows.Media.Brushes.White;
+        ResetDropZone();
     }
 
-    private async void Window_Drop(object sender, DragEventArgs e)
+    private void DropZone_DragOver(object sender, System.Windows.DragEventArgs e)
     {
-        this.Background = System.Windows.Media.Brushes.White;
+        e.Effects = e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)
+            ? System.Windows.DragDropEffects.Copy
+            : System.Windows.DragDropEffects.None;
+        e.Handled = true;
+    }
 
-        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+    private async void DropZone_Drop(object sender, System.Windows.DragEventArgs e)
+    {
+        ResetDropZone();
+
+        if (!e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
         {
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            return;
+        }
 
-            // PDFファイルのみをフィルタリング
-            var pdfFiles = Array.FindAll(files, f => f.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase));
+        var dropped = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
+        var pdfFiles = dropped
+            .Where(path => path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
 
-            if (pdfFiles.Length > 0)
+        if (pdfFiles.Length == 0)
+        {
+            WpfMessageBox.Show("Please drop one or more PDF files.", "No PDF files", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(TxtOutputPath.Text) || TxtOutputPath.Text == OutputPlaceholder)
+        {
+            var firstDir = Path.GetDirectoryName(pdfFiles[0]);
+            if (!string.IsNullOrWhiteSpace(firstDir))
             {
-                TxtPdfPath.Text = pdfFiles[0];
-                TxtPdfPath.Foreground = System.Windows.Media.Brushes.Black;
-
-                // 出力先が未設定の場合はPDFと同じフォルダをデフォルトに
-                if (string.IsNullOrEmpty(TxtOutputPath.Text) || TxtOutputPath.Text == OutputPlaceholder)
-                {
-                    string? pdfDirectory = Path.GetDirectoryName(pdfFiles[0]);
-                    if (!string.IsNullOrEmpty(pdfDirectory))
-                    {
-                        TxtOutputPath.Text = pdfDirectory;
-                        TxtOutputPath.Foreground = System.Windows.Media.Brushes.Black;
-                    }
-                }
-
-                // 複数のPDFがドロップされた場合は自動的にバッチ変換
-                if (pdfFiles.Length > 1)
-                {
-                    await BatchConvertAsync(pdfFiles);
-                }
+                SetOutputPath(firstDir);
             }
         }
+
+        if (pdfFiles.Length == 1)
+        {
+            SetPdfPath(pdfFiles[0]);
+            return;
+        }
+
+        TxtPdfPath.Text = $"{pdfFiles.Length} PDF files selected";
+        TxtPdfPath.Foreground = new SolidColorBrush(WpfColor.FromRgb(33, 150, 243));
+
+        if (!IsOutputPathValid(TxtOutputPath.Text))
+        {
+            WpfMessageBox.Show("Please select a valid output folder.", "Output folder required", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        await BatchConvertAsync(pdfFiles);
+    }
+
+    private void ResetDropZone()
+    {
+        DropZone.BorderBrush = new SolidColorBrush(WpfColor.FromRgb(144, 202, 249));
+        DropZone.Background = WpfBrushes.White;
     }
 
     private void BtnSelectPdf_Click(object sender, RoutedEventArgs e)
     {
-        var openFileDialog = new OpenFileDialog
+        var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Filter = "PDF files (*.pdf)|*.pdf|All files (*.*)|*.*",
             FilterIndex = 1,
-            RestoreDirectory = true
+            RestoreDirectory = true,
+            Multiselect = false
         };
 
-        if (openFileDialog.ShowDialog() == true)
+        if (dialog.ShowDialog() != true)
         {
-            TxtPdfPath.Text = openFileDialog.FileName;
-            TxtPdfPath.Foreground = System.Windows.Media.Brushes.Black;
+            return;
+        }
 
-            if (string.IsNullOrEmpty(TxtOutputPath.Text) || TxtOutputPath.Text == OutputPlaceholder)
+        SetPdfPath(dialog.FileName);
+
+        if (string.IsNullOrWhiteSpace(TxtOutputPath.Text) || TxtOutputPath.Text == OutputPlaceholder)
+        {
+            var dir = Path.GetDirectoryName(dialog.FileName);
+            if (!string.IsNullOrWhiteSpace(dir))
             {
-                string? pdfDirectory = Path.GetDirectoryName(openFileDialog.FileName);
-                if (!string.IsNullOrEmpty(pdfDirectory))
-                {
-                    TxtOutputPath.Text = pdfDirectory;
-                    TxtOutputPath.Foreground = System.Windows.Media.Brushes.Black;
-                }
+                SetOutputPath(dir);
             }
         }
     }
 
     private void BtnSelectOutput_Click(object sender, RoutedEventArgs e)
     {
-        var openFolderDialog = new OpenFileDialog
+        using var dialog = new WinForms.FolderBrowserDialog
         {
-            Title = "出力先フォルダを選択してください",
-            Filter = "Folders|*.none",
-            FileName = "Select Folder",
-            CheckFileExists = false,
-            CheckPathExists = true
+            Description = "Select output folder",
+            UseDescriptionForTitle = true,
+            ShowNewFolderButton = true
         };
 
-        if (openFolderDialog.ShowDialog() == true)
+        if (dialog.ShowDialog() == WinForms.DialogResult.OK)
         {
-            string? folder = Path.GetDirectoryName(openFolderDialog.FileName);
-            if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder))
-            {
-                TxtOutputPath.Text = folder;
-                TxtOutputPath.Foreground = System.Windows.Media.Brushes.Black;
-            }
+            SetOutputPath(dialog.SelectedPath);
         }
     }
 
     private void SliderQuality_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         _quality = (int)SliderQuality.Value;
-        LblQuality.Text = _quality + "%";
+        UpdateQualityLabel();
+    }
+
+    private void SliderDpi_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        _dpi = (int)SliderDpi.Value;
+        UpdateQualityLabel();
+    }
+
+    private void UpdateQualityLabel()
+    {
+        if (LblQuality != null)
+        {
+            LblQuality.Text = $"Quality: {_quality}%   DPI: {_dpi}";
+        }
     }
 
     private async void BtnConvert_Click(object sender, RoutedEventArgs e)
     {
-        string pdfPath = TxtPdfPath.Text;
-        string outputPath = TxtOutputPath.Text;
+        var pdfPath = TxtPdfPath.Text;
+        var outputPath = TxtOutputPath.Text;
 
-        if (string.IsNullOrEmpty(pdfPath) || pdfPath == PdfPlaceholder || !File.Exists(pdfPath))
+        if (string.IsNullOrWhiteSpace(pdfPath) || pdfPath == PdfPlaceholder || !File.Exists(pdfPath))
         {
-            MessageBox.Show("PDFファイルを選択してください。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            WpfMessageBox.Show("Please select a valid PDF file.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
-        if (string.IsNullOrEmpty(outputPath) || outputPath == OutputPlaceholder || !Directory.Exists(outputPath))
+        if (!IsOutputPathValid(outputPath))
         {
-            MessageBox.Show("出力先フォルダを選択してください。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            WpfMessageBox.Show("Please select a valid output folder.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
-        BtnConvert.IsEnabled = false;
-        BtnConvertAll.IsEnabled = false;
+        SetButtonsEnabled(false);
+        ProgressBar.Maximum = 100;
+        ProgressBar.Value = 0;
 
         try
         {
             await ConvertPdfToJpgAsync(pdfPath, outputPath);
-            LblStatus.Text = "完了！";
+            LblStatus.Text = "Conversion completed.";
 
             if (ChkOpenFolder.IsChecked == true)
             {
@@ -205,210 +207,206 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"変換中にエラーが発生しました:\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-            LblStatus.Text = "エラー発生";
+            WpfMessageBox.Show($"An error occurred during conversion:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            LblStatus.Text = "Conversion failed.";
         }
         finally
         {
-            BtnConvert.IsEnabled = true;
-            BtnConvertAll.IsEnabled = true;
+            SetButtonsEnabled(true);
         }
     }
 
     private async void BtnConvertAll_Click(object sender, RoutedEventArgs e)
     {
-        // 出力先フォルダを選択
-        var outputFolderDialog = new OpenFileDialog
+        string sourceFolder;
+        using (var srcDialog = new WinForms.FolderBrowserDialog
         {
-            Title = "出力先フォルダを選択してください",
-            Filter = "Folders|*.none",
-            FileName = "Select Folder",
-            CheckFileExists = false,
-            CheckPathExists = true
-        };
+            Description = "Select source folder containing PDF files",
+            UseDescriptionForTitle = true
+        })
+        {
+            if (srcDialog.ShowDialog() != WinForms.DialogResult.OK)
+            {
+                return;
+            }
 
-        if (outputFolderDialog.ShowDialog() != true)
+            sourceFolder = srcDialog.SelectedPath;
+        }
+
+        string outputFolder;
+        using (var outDialog = new WinForms.FolderBrowserDialog
         {
+            Description = "Select output folder for JPG files",
+            UseDescriptionForTitle = true,
+            ShowNewFolderButton = true
+        })
+        {
+            if (outDialog.ShowDialog() != WinForms.DialogResult.OK)
+            {
+                return;
+            }
+
+            outputFolder = outDialog.SelectedPath;
+        }
+
+        SetOutputPath(outputFolder);
+
+        var pdfFiles = Directory.GetFiles(sourceFolder, "*.pdf", SearchOption.TopDirectoryOnly);
+        if (pdfFiles.Length == 0)
+        {
+            WpfMessageBox.Show("No PDF files found in the selected folder.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        string? outputPath = Path.GetDirectoryName(outputFolderDialog.FileName);
-        if (string.IsNullOrEmpty(outputPath) || !Directory.Exists(outputPath))
-        {
-            MessageBox.Show("出力先フォルダを選択してください。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-            return;
-        }
-
-        TxtOutputPath.Text = outputPath;
-        TxtOutputPath.Foreground = System.Windows.Media.Brushes.Black;
-
-        // PDFファイルが含まれるフォルダを選択
-        var sourceFolderDialog = new OpenFileDialog
-        {
-            Title = "PDFファイルが含まれるフォルダを選択してください",
-            Filter = "Folders|*.none",
-            FileName = "Select Folder",
-            CheckFileExists = false,
-            CheckPathExists = true
-        };
-
-        if (sourceFolderDialog.ShowDialog() != true)
-        {
-            return;
-        }
-
-        string? sourceFolder = Path.GetDirectoryName(sourceFolderDialog.FileName);
-        if (string.IsNullOrEmpty(sourceFolder))
-        {
-            return;
-        }
-
-        string[] pdfFiles = Directory.GetFiles(sourceFolder, "*.pdf", SearchOption.TopDirectoryOnly);
         await BatchConvertAsync(pdfFiles);
     }
 
     private async Task BatchConvertAsync(string[] pdfFiles)
     {
-        string outputPath = TxtOutputPath.Text;
-
-        if (string.IsNullOrEmpty(outputPath) || outputPath == OutputPlaceholder || !Directory.Exists(outputPath))
+        var outputPath = TxtOutputPath.Text;
+        if (!IsOutputPathValid(outputPath))
         {
-            MessageBox.Show("出力先フォルダを選択してください。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            WpfMessageBox.Show("Please select a valid output folder.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
-        BtnConvert.IsEnabled = false;
-        BtnConvertAll.IsEnabled = false;
+        SetButtonsEnabled(false);
+        ProgressBar.Maximum = pdfFiles.Length;
+        ProgressBar.Value = 0;
+
+        var successCount = 0;
+        var failCount = 0;
+        var errors = new List<string>();
 
         try
         {
-            if (pdfFiles.Length == 0)
+            for (var i = 0; i < pdfFiles.Length; i++)
             {
-                MessageBox.Show("PDFファイルが見つかりませんでした。", "情報", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
+                var pdfFile = pdfFiles[i];
+                LblStatus.Text = $"Converting ({i + 1}/{pdfFiles.Length}): {Path.GetFileName(pdfFile)}";
 
-            int successCount = 0;
-            int failCount = 0;
-
-            foreach (string pdfFile in pdfFiles)
-            {
                 try
                 {
-                    LblStatus.Text = $"変換中: {Path.GetFileName(pdfFile)}";
                     await ConvertPdfToJpgAsync(pdfFile, outputPath);
                     successCount++;
                 }
-                catch
+                catch (Exception ex)
                 {
                     failCount++;
+                    errors.Add($"{Path.GetFileName(pdfFile)}: {ex.Message}");
                 }
+
+                ProgressBar.Value = i + 1;
             }
 
-            LblStatus.Text = $"完了！成功: {successCount}, 失敗: {failCount}";
+            LblStatus.Text = $"Done - Success: {successCount}, Failed: {failCount}";
 
-            MessageBox.Show(
-                $"バッチ変換が完了しました。\n成功: {successCount}ファイル\n失敗: {failCount}ファイル",
-                "完了",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            var summary = $"Batch conversion completed.\nSuccess: {successCount}\nFailed: {failCount}";
+            if (errors.Count > 0)
+            {
+                summary += "\n\nError details:\n" + string.Join("\n", errors.Take(5));
+            }
+
+            WpfMessageBox.Show(summary, "Result", MessageBoxButton.OK, MessageBoxImage.Information);
 
             if (ChkOpenFolder.IsChecked == true && successCount > 0)
             {
                 Process.Start("explorer.exe", outputPath);
             }
         }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"バッチ変換中にエラーが発生しました:\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-            LblStatus.Text = "エラー発生";
-        }
         finally
         {
-            BtnConvert.IsEnabled = true;
-            BtnConvertAll.IsEnabled = true;
+            SetButtonsEnabled(true);
         }
     }
 
-    private async Task ConvertPdfToJpgAsync(string pdfPath, string outputPath)
+    private async Task ConvertPdfToJpgAsync(string pdfPath, string outputFolder)
     {
-        await Task.Run(async () =>
+        await Task.Run(() =>
         {
-            string pdfName = Path.GetFileNameWithoutExtension(pdfPath);
+            var pdfName = Path.GetFileNameWithoutExtension(pdfPath);
+            var quality = _quality;
+            var dpi = _dpi;
 
-            // PuppeteerSharpでブラウザを起動
-            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            using var docReader = DocLib.Instance.GetDocReader(pdfPath, new PageDimensions(dpi / 72.0));
+            var pageCount = docReader.GetPageCount();
+
+            for (var pageIndex = 0; pageIndex < pageCount; pageIndex++)
             {
-                Headless = true,
-                ExecutablePath = null
-            });
+                using var pageReader = docReader.GetPageReader(pageIndex);
 
-            await using var page = await browser.NewPageAsync();
+                var width = pageReader.GetPageWidth();
+                var height = pageReader.GetPageHeight();
+                var rawBytes = pageReader.GetImage();
 
-            // PDFのデータを読み込み
-            byte[] pdfBytes = File.ReadAllBytes(pdfPath);
-            string base64Pdf = Convert.ToBase64String(pdfBytes);
+                using var bitmap = new System.Drawing.Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                var bitmapData = bitmap.LockBits(
+                    new System.Drawing.Rectangle(0, 0, width, height),
+                    System.Drawing.Imaging.ImageLockMode.WriteOnly,
+                    System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
-            // PDFをページに読み込むためのHTMLを作成
-            string html = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body {{ margin: 0; padding: 0; }}
-        iframe {{ width: 100%; height: 100vh; border: none; }}
-    </style>
-</head>
-<body>
-    <embed id='pdf' src='data:application/pdf;base64,{base64Pdf}' type='application/pdf' width='100%' height='100%' />
-    <script>
-        // PDFのページ数を取得して親ウィンドウに通知
-        window.onload = function() {{
-            const pdf = document.getElementById('pdf');
-            // ChromeのPDFビューアではページ数を直接取得できないため、
-            // 固定値を返す（実際には各ページをスクロールしてキャプチャ）
-        }};
-    </script>
-</body>
-</html>";
+                Marshal.Copy(rawBytes, 0, bitmapData.Scan0, rawBytes.Length);
+                bitmap.UnlockBits(bitmapData);
 
-            // 解像度を画質に応じて調整
-            int viewportWidth = 1200 + (int)((_quality - 50) * 10);
-            int viewportHeight = 1600 + (int)((_quality - 50) * 10);
+                using var whiteBackground = new System.Drawing.Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                using var graphics = System.Drawing.Graphics.FromImage(whiteBackground);
+                graphics.Clear(System.Drawing.Color.White);
+                graphics.DrawImage(bitmap, 0, 0, width, height);
 
-            await page.SetViewportAsync(new ViewPortOptions
-            {
-                Width = viewportWidth,
-                Height = viewportHeight,
-                DeviceScaleFactor = 1
-            });
+                var jpegEncoder = GetJpegEncoder();
+                using var encoderParams = new System.Drawing.Imaging.EncoderParameters(1);
+                encoderParams.Param[0] = new System.Drawing.Imaging.EncoderParameter(
+                    System.Drawing.Imaging.Encoder.Quality,
+                    (long)quality);
 
-            // 注: PuppeteerSharp/Chromeの制約により、複数ページPDFの全ページ変換は複雑です
-            // 現在の実装では1ページ目をキャプチャします
-            // 完全な複数ページ対応には、追加のライブラリ（PdfiumViewerなど）が必要です
-
-            await page.GoToAsync($"data:text/html;base64,{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(html))}");
-
-            // ページが読み込まれるのを待つ
-            await Task.Delay(2000);
-
-            // スクリーンショットを撮る
-            byte[] screenshotBytes = await page.ScreenshotDataAsync(new ScreenshotOptions
-            {
-                Type = ScreenshotType.Jpeg,
-                Quality = _quality
-            });
-
-            string outputFile = Path.Combine(outputPath, $"{pdfName}_page_001.jpg");
-            File.WriteAllBytes(outputFile, screenshotBytes);
+                var pageNum = (pageIndex + 1).ToString("D3");
+                var outputFile = Path.Combine(outputFolder, $"{pdfName}_page_{pageNum}.jpg");
+                whiteBackground.Save(outputFile, jpegEncoder, encoderParams);
+            }
 
             Dispatcher.Invoke(() =>
             {
-                ProgressBar.Value = 1;
-                LblStatus.Text = "変換完了";
+                ProgressBar.Value = ProgressBar.Maximum > 1 ? ProgressBar.Value : 100;
+                LblStatus.Text = $"Completed: {pdfName} ({pageCount} pages)";
             });
-
-            await browser.CloseAsync();
         });
+    }
+
+    private static System.Drawing.Imaging.ImageCodecInfo GetJpegEncoder()
+    {
+        foreach (var codec in System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders())
+        {
+            if (codec.FormatID == System.Drawing.Imaging.ImageFormat.Jpeg.Guid)
+            {
+                return codec;
+            }
+        }
+
+        throw new InvalidOperationException("JPEG encoder not found.");
+    }
+
+    private void SetPdfPath(string path)
+    {
+        TxtPdfPath.Text = path;
+        TxtPdfPath.Foreground = new SolidColorBrush(WpfColor.FromRgb(33, 33, 33));
+    }
+
+    private void SetOutputPath(string path)
+    {
+        TxtOutputPath.Text = path;
+        TxtOutputPath.Foreground = new SolidColorBrush(WpfColor.FromRgb(33, 33, 33));
+    }
+
+    private bool IsOutputPathValid(string path)
+    {
+        return !string.IsNullOrWhiteSpace(path) && path != OutputPlaceholder && Directory.Exists(path);
+    }
+
+    private void SetButtonsEnabled(bool enabled)
+    {
+        BtnConvert.IsEnabled = enabled;
+        BtnConvertAll.IsEnabled = enabled;
+        BtnSelectPdf.IsEnabled = enabled;
+        BtnSelectOutput.IsEnabled = enabled;
     }
 }

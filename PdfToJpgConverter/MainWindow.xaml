@@ -5,13 +5,87 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PdfToJpgConverter"
         mc:Ignorable="d"
-        Title="PDF to JPG Converter" Height="530" Width="700"
+        Title="PDF to JPG Converter" Height="700" Width="720"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanMinimize"
-        AllowDrop="True"
-        Drop="Window_Drop"
-        DragEnter="Window_DragEnter"
-        DragLeave="Window_DragLeave">
+        Background="#F5F5F5">
+
+    <Window.Resources>
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#BDBDBD"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#4CAF50"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#388E3C"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#BDBDBD"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SmallButton" TargetType="Button">
+            <Setter Property="Background" Value="#607D8B"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#455A64"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -27,84 +101,139 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- タイトル -->
-        <TextBlock Grid.Row="0" Text="PDF to JPG Converter" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
-
-        <!-- PDFファイル選択 -->
-        <StackPanel Grid.Row="1" Margin="0,0,0,10">
-            <TextBlock Text="PDFファイル:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="10"/>
-                    <ColumnDefinition Width="100"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="TxtPdfPath" Grid.Column="0" IsReadOnly="True"
-                         Text="PDFファイルを選択してください" Foreground="Gray" Padding="5"/>
-                <Button x:Name="BtnSelectPdf" Grid.Column="2" Content="選択" Click="BtnSelectPdf_Click"/>
-            </Grid>
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="PDF to JPG Converter" FontSize="26" FontWeight="Bold" Foreground="#1565C0"/>
+            <TextBlock Text="Convert PDF files to high-quality JPG images." FontSize="12" Foreground="#757575" Margin="0,2,0,0"/>
         </StackPanel>
 
-        <!-- 出力先フォルダ選択 -->
-        <StackPanel Grid.Row="2" Margin="0,0,0,10">
-            <TextBlock Text="出力先フォルダ:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="10"/>
-                    <ColumnDefinition Width="100"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="TxtOutputPath" Grid.Column="0" IsReadOnly="True"
-                         Text="出力先フォルダを選択してください" Foreground="Gray" Padding="5"/>
-                <Button x:Name="BtnSelectOutput" Grid.Column="2" Content="選択" Click="BtnSelectOutput_Click"/>
-            </Grid>
-        </StackPanel>
+        <Border Grid.Row="1" x:Name="DropZone"
+                BorderBrush="#90CAF9" BorderThickness="2"
+                Background="White" CornerRadius="8"
+                Margin="0,0,0,15" Padding="20,18"
+                AllowDrop="True"
+                Drop="DropZone_Drop"
+                DragEnter="DropZone_DragEnter"
+                DragLeave="DropZone_DragLeave"
+                DragOver="DropZone_DragOver">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock x:Name="TxtDropHint"
+                           Text="Drag and drop PDF files here"
+                           FontSize="15" Foreground="#1976D2"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="You can process multiple files in a batch."
+                           FontSize="11" Foreground="#9E9E9E"
+                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
 
-        <!-- 画質設定 -->
-        <StackPanel Grid.Row="3" Margin="0,0,0,15">
-            <TextBlock Text="画質設定:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Slider x:Name="SliderQuality" Grid.Column="0" Minimum="10" Maximum="100" Value="85"
-                        TickFrequency="5" IsSnapToTickEnabled="True" ValueChanged="SliderQuality_ValueChanged"/>
-                <TextBlock x:Name="LblQuality" Grid.Column="1" Text="85%" FontWeight="Bold"
-                           MinWidth="50" TextAlignment="Right" Margin="10,0,0,0"/>
-            </Grid>
-        </StackPanel>
+        <Border Grid.Row="2" Background="White" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="PDF file:" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,6"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="TxtPdfPath" Grid.Column="0"
+                             IsReadOnly="True" Foreground="#9E9E9E"
+                             Background="#FAFAFA" BorderBrush="#E0E0E0"
+                             Padding="6,4" VerticalContentAlignment="Center"
+                             Text="Select or drop a PDF file"/>
+                    <Button x:Name="BtnSelectPdf" Grid.Column="2" Content="Browse..."
+                            Style="{StaticResource SmallButton}" Click="BtnSelectPdf_Click"/>
+                </Grid>
+            </StackPanel>
+        </Border>
 
-        <!-- 変換ボタン -->
-        <Grid Grid.Row="4" Margin="0,0,0,15">
+        <Border Grid.Row="3" Background="White" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="Output folder:" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,6"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="TxtOutputPath" Grid.Column="0"
+                             IsReadOnly="True" Foreground="#9E9E9E"
+                             Background="#FAFAFA" BorderBrush="#E0E0E0"
+                             Padding="6,4" VerticalContentAlignment="Center"
+                             Text="Select an output folder"/>
+                    <Button x:Name="BtnSelectOutput" Grid.Column="2" Content="Browse..."
+                            Style="{StaticResource SmallButton}" Click="BtnSelectOutput_Click"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="4" Background="White" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Conversion settings:" FontWeight="SemiBold" Foreground="#424242"/>
+                    <TextBlock x:Name="LblQuality" Grid.Column="1" Text="Quality: 85%   DPI: 150"
+                               Foreground="#1565C0" FontWeight="SemiBold"/>
+                </Grid>
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="90"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="JPEG quality:" Foreground="#616161" VerticalAlignment="Center"/>
+                    <Slider x:Name="SliderQuality" Grid.Row="0" Grid.Column="1"
+                            Minimum="10" Maximum="100" Value="85"
+                            TickFrequency="5" IsSnapToTickEnabled="True"
+                            ValueChanged="SliderQuality_ValueChanged"/>
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Resolution (DPI):" Foreground="#616161" VerticalAlignment="Center"/>
+                    <Slider x:Name="SliderDpi" Grid.Row="2" Grid.Column="1"
+                            Minimum="72" Maximum="300" Value="150"
+                            IsSnapToTickEnabled="False"
+                            ValueChanged="SliderDpi_ValueChanged"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="5" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="12"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Button x:Name="BtnConvert" Grid.Column="0" Content="単一ファイル変換" FontSize="14" Padding="10"
-                    Click="BtnConvert_Click" Height="45"/>
-            <Button x:Name="BtnConvertAll" Grid.Column="2" Content="フォルダ内のPDFを一括変換" FontSize="14" Padding="10"
-                    Click="BtnConvertAll_Click" Height="45"/>
+            <Button x:Name="BtnConvert" Grid.Column="0"
+                    Content="Convert selected file" FontSize="14"
+                    Style="{StaticResource PrimaryButton}"
+                    Click="BtnConvert_Click" Height="46"/>
+            <Button x:Name="BtnConvertAll" Grid.Column="2"
+                    Content="Batch convert PDFs in folder" FontSize="14"
+                    Style="{StaticResource SecondaryButton}"
+                    Click="BtnConvertAll_Click" Height="46"/>
         </Grid>
 
-        <!-- 進捗バー -->
-        <StackPanel Grid.Row="5" Margin="0,0,0,10">
-            <ProgressBar x:Name="ProgressBar" Height="25" Minimum="0" Maximum="100" Value="0"/>
-        </StackPanel>
+        <ProgressBar x:Name="ProgressBar" Grid.Row="6"
+                     Height="22" Minimum="0" Maximum="100" Value="0"
+                     Foreground="#2196F3" Margin="0,0,0,8"/>
 
-        <!-- ステータス -->
-        <TextBlock x:Name="LblStatus" Grid.Row="6" Text="待機中..." Margin="0,0,0,10"/>
+        <Border Grid.Row="7" Background="White" CornerRadius="4" Padding="8,5" Margin="0,0,0,10">
+            <TextBlock x:Name="LblStatus" Text="Ready." Foreground="#616161" FontSize="12"/>
+        </Border>
 
-        <!-- オプション -->
-        <CheckBox x:Name="ChkOpenFolder" Grid.Row="7" Content="変換後にフォルダを開く" IsChecked="True" Margin="0,0,0,10"/>
+        <CheckBox x:Name="ChkOpenFolder" Grid.Row="8"
+                  Content="Open output folder after conversion" IsChecked="True"
+                  Foreground="#424242" Margin="0,0,0,10"/>
 
-        <!-- クレジット -->
-        <Border Grid.Row="8" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="0,15,0,0">
-            <TextBlock Text="© 2025 Yuki Kondo | Created with ❤️"
+        <Border Grid.Row="9" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+            <TextBlock Text="Copyright 2025 Yuki Kondo | PDF to JPG Converter"
                        HorizontalAlignment="Center"
                        FontSize="11"
-                       Foreground="#999999"/>
+                       Foreground="#9E9E9E"/>
         </Border>
     </Grid>
 </Window>
